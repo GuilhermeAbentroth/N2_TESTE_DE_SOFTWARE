@@ -2,14 +2,14 @@ import pytest
 import time
 from typing import Dict, Any
 
-# Importações do código de produção
+
 from src.faturamento.domain import Cliente, ItemFatura, Fatura
 from src.faturamento.interfaces import FaturaRepository, EmailService, GatewayPagamento
 from src.faturamento.services import FaturaService
 from src.faturamento.repositories import InMemoryFaturaRepository
 
 
-# --- Dublês de Teste (Stubs/Mocks Manuais) ---
+
 
 class StubEmailService(EmailService):
     """ (Item 5 - Stub) """
@@ -22,7 +22,7 @@ class StubEmailService(EmailService):
         return True
 
 
-# --- Fixtures (Item 1: Ciclo de Vida) ---
+
 
 @pytest.fixture
 def repo_em_memoria() -> FaturaRepository:
@@ -51,7 +51,7 @@ def cliente_padrao() -> Cliente:
     return Cliente(id="cli-123", nome="Cliente Teste", email="teste@email.com")
 
 
-# --- Testes de Cálculo (Itens 2, 3, 4) ---
+
 
 @pytest.mark.parametrize(
     "itens_input, cupom, esperado",
@@ -71,7 +71,7 @@ def test_excecao_cupom_invalido(service: FaturaService, cupom_invalido):
         service.calcular_total_fatura([], cupom_pct=cupom_invalido)
 
 
-# --- Teste de Integração (Item 6) e Mocks (Item 5) ---
+
 
 def test_fluxo_completo_pagamento_aprovado_com_mock_e_stub(
         service: FaturaService,
@@ -81,32 +81,31 @@ def test_fluxo_completo_pagamento_aprovado_com_mock_e_stub(
         cliente_padrao: Cliente
 ):
     """ Testa o fluxo ponta-a-ponta (Itens 5 e 6) """
-    # 1. Arrange (Preparação)
-    itens = [ItemFatura(descricao="Produto Teste", quantidade=1, preco_unitario=100.0)]
-    total_esperado = 106.00  # 100 * (1 + 0.06 de imposto)
 
-    # Define a resposta esperada do Mock
+    itens = [ItemFatura(descricao="Produto Teste", quantidade=1, preco_unitario=100.0)]
+    total_esperado = 106.00
+
+
     resposta_gateway = {"status": "APROVADO", "id_transacao": "xyz-789"}
     mock_gateway.pagar.return_value = resposta_gateway
 
-    # 2. Act (Ação)
+
     fatura_processada = service.fechar_fatura(cliente_padrao, itens, cupom_pct=0)
 
-    # 3. Assert (Verificação)
-    # 3.1. Verifica se o gateway foi chamado corretamente
+
     mock_gateway.pagar.assert_called_once()
 
-    # 3.2. Verifica se o e-mail foi enviado (Stub)
+
     assert len(stub_email.mensagens_enviadas) == 1
     assert stub_email.mensagens_enviadas[0]["para"] == "teste@email.com"
 
-    # 3.3. Verifica se a fatura foi salva no repositório
+
     fatura_salva = repo_em_memoria.buscar_por_id(fatura_processada.id)
     assert fatura_salva is not None
     assert fatura_salva.status == "PAGA"
 
 
-# (Item 7: Teste de Performance)
+
 def test_performance_calculo_fatura(service: FaturaService):
     """Testa se o cálculo de uma fatura grande é rápido."""
     itens_grandes = [
@@ -114,16 +113,16 @@ def test_performance_calculo_fatura(service: FaturaService):
         for _ in range(1000)
     ]
 
-    # Marca o tempo de início
+
     t0 = time.perf_counter()
 
-    # Executa a lógica
+
     service.calcular_total_fatura(itens_grandes, cupom_pct=15)
 
-    # Marca o tempo de fim
+
     t1 = time.perf_counter()
 
     duracao = t1 - t0
 
-    # Garante que a execução levou menos de 100ms (0.1 segundos)
+
     assert duracao < 0.1
