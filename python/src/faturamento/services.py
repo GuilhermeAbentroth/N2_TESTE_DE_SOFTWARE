@@ -18,3 +18,12 @@ class FaturaService:
             total_final = total_com_imposto
 
         return round(total_final, 2)
+
+    @pytest.mark.parametrize("cupom_invalido", [-10, 101, -0.1])
+    def test_excecao_cupom_invalido(cupom_invalido):
+        service = FaturaService()
+        with pytest.raises(ValueError, match="Cupom de desconto deve estar entre 0 e 100"):
+            service.calcular_total_fatura(
+                itens=[ItemFatura("Item A", 1, 10.0)],
+                cupom_pct=cupom_invalido
+            )
