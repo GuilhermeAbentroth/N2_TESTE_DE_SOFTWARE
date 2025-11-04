@@ -1,22 +1,29 @@
+from .domain import Fatura, ItemFatura, Cliente
+from .interfaces import FaturaRepository, EmailService, GatewayPagamento
 from typing import List
-from .domain import ItemFatura
 
 
 class FaturaService:
     TAXA_IMPOSTO_SIMPLES: float = 0.06  # Regra: 6% de imposto
 
-    def calcular_total_fatura(self, itens: List[ItemFatura], cupom_pct: float = 0) -> float:
+    def __init__(
+            self,
+            repository: FaturaRepository,
+            email_service: EmailService,
+            gateway: GatewayPagamento
+    ):
+        self.repository = repository
+        self.email_service = email_service
+        self.gateway = gateway
 
+    def calcular_total_fatura(self, itens: List[ItemFatura], cupom_pct: float = 0) -> float:
+        # (O código anterior desta função continua aqui, inalterado)
         if not (0 <= cupom_pct <= 100):
             raise ValueError("Cupom de desconto deve estar entre 0 e 100")
 
-        # 1. Calcula o subtotal
         subtotal = sum(item.quantidade * item.preco_unitario for item in itens)
-
-        # 2. Aplica o imposto (Regra de negócio)
         total_com_imposto = subtotal * (1 + self.TAXA_IMPOSTO_SIMPLES)
 
-        # 3. Aplica o cupom de desconto (Regra de negócio)
         if cupom_pct > 0:
             desconto = total_com_imposto * (cupom_pct / 100)
             total_final = total_com_imposto - desconto
@@ -24,3 +31,7 @@ class FaturaService:
             total_final = total_com_imposto
 
         return round(total_final, 2)
+
+    def fechar_fatura(self, cliente: Cliente, itens: List[ItemFatura], cupom_pct: float = 0) -> Fatura:
+        """ (Item 6) Fluxo ponta-a-ponta """
+        pass  # Stub inicial
