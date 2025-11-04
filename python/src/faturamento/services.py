@@ -7,6 +7,9 @@ class FaturaService:
 
     def calcular_total_fatura(self, itens: List[ItemFatura], cupom_pct: float = 0) -> float:
 
+        if not (0 <= cupom_pct <= 100):
+            raise ValueError("Cupom de desconto deve estar entre 0 e 100")
+
         # 1. Calcula o subtotal
         subtotal = sum(item.quantidade * item.preco_unitario for item in itens)
 
