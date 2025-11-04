@@ -34,4 +34,36 @@ class FaturaService:
 
     def fechar_fatura(self, cliente: Cliente, itens: List[ItemFatura], cupom_pct: float = 0) -> Fatura:
         """ (Item 6) Fluxo ponta-a-ponta """
-        pass  # Stub inicial
+
+        # (Item 3) Teste de exceção adicional
+        if not itens:
+            raise ValueError("Não é possível fechar uma fatura sem itens")
+
+        # Cria a fatura e calcula o total
+        fatura = Fatura(cliente_id=cliente.id, itens=itens)
+        fatura.total = self.calcular_total_fatura(itens, cupom_pct)
+
+        # Prepara os dados para o gateway (Mock)
+        dados_pagamento = {
+            "cliente_id": cliente.id,
+            "valor": fatura.total,
+            "fatura_id": fatura.id
+        }
+
+        # Chama o Gateway de Pagamento
+        resposta = self.gateway.pagar(dados_pagamento)
+
+        # Processa a resposta
+        if resposta.get("status") == "APROVADO":
+            fatura.status = "PAGA"
+            fatura.id_pagamento = resposta.get("id_transacao")
+
+            # Envia e-mail de cobrança (Stub)
+            self.email_service.enviar_cobranca(cliente.email, fatura.id, fatura.total)
+
+        else:
+            fatura.status = "RECUSADA"
+
+        # Salva o estado final da fatura (Repo em Memória)
+        self.repository.salvar(fatura)
+        return fatura
