@@ -104,3 +104,26 @@ def test_fluxo_completo_pagamento_aprovado_com_mock_e_stub(
     fatura_salva = repo_em_memoria.buscar_por_id(fatura_processada.id)
     assert fatura_salva is not None
     assert fatura_salva.status == "PAGA"
+
+
+# (Item 7: Teste de Performance)
+def test_performance_calculo_fatura(service: FaturaService):
+    """Testa se o cálculo de uma fatura grande é rápido."""
+    itens_grandes = [
+        ItemFatura(descricao="Item", quantidade=1, preco_unitario=1.5)
+        for _ in range(1000)
+    ]
+
+    # Marca o tempo de início
+    t0 = time.perf_counter()
+
+    # Executa a lógica
+    service.calcular_total_fatura(itens_grandes, cupom_pct=15)
+
+    # Marca o tempo de fim
+    t1 = time.perf_counter()
+
+    duracao = t1 - t0
+
+    # Garante que a execução levou menos de 100ms (0.1 segundos)
+    assert duracao < 0.1
