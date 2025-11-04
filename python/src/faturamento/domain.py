@@ -6,3 +6,5 @@ class ItemFatura:
     descricao: str
     quantidade: int
     preco_unitario: float
+
+    # (Item 3) Validação de exceção será adicionada aqui
